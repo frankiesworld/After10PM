@@ -1,0 +1,267 @@
+/* src/index.css */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  background-image: url('/Afte10PMbg.png');
+  background-repeat: repeat;
+  background-attachment: fixed;
+}
+
+
+/* Navbar */
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 200;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 70px;
+  background: rgba(210, 228, 245, 0.85);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  transform: translateY(-100%);
+  opacity: 0;
+  transition: transform 0.4s ease, opacity 0.4s ease;
+  pointer-events: none;
+}
+
+.navbar.visible {
+  transform: translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.navbar-links {
+  display: flex;
+  list-style: none;
+  gap: 2.5rem;
+}
+
+.navbar-links a {
+  color: #5c2d6b;
+  text-decoration: none;
+  font-weight: bold;
+  font-size: 1rem;
+  transition: color 0.2s ease;
+}
+
+.navbar-links a:hover {
+  color: #8a5a9e;
+}
+
+/* Hero (pinned, oversized logo) */
+.hero-pin {
+  position: relative;
+  height: 120vh;
+}
+
+.hero-inner {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.hero-logo {
+  max-height: 85vh;
+  max-width: 90vw;
+  width: auto;
+}
+
+/* Service clouds section wrapper */
+.clouds-section {
+  position: relative;
+  z-index: 2;
+}
+
+/* Each pinned cloud (desktop default) */
+.cloud-pin {
+  position: relative;
+  height: 180vh;
+}
+
+.cloud-inner {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+.cloud-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem; /* tight spacing between cloud and example card */
+  transition: transform 0.1s linear;
+}
+
+.cloud-shape {
+  position: relative;
+  width: 640px;
+  min-height: 460px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.cloud-example {
+  cursor: pointer;
+  text-align: center;
+  transition: transform 0.2s ease;
+}
+
+.cloud-example:hover {
+  transform: translateY(-4px);
+}
+
+.cloud-example-img {
+  width: auto;
+  height: auto;
+  max-width: 320px;
+  max-height: 420px;
+  object-fit: contain;
+  border-radius: 16px;
+  border: 3px solid #8a5a9e;
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+}
+
+.cloud-example-label {
+  margin-top: 0.5rem;
+  color: #5c2d6b;
+  font-size: 0.9rem;
+  font-weight: bold;
+}
+
+.cloud-shape {
+  position: relative;
+  width: 640px;
+  min-height: 460px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.1s linear;
+}
+
+.cloud-bg-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.cloud-content {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  padding: 2rem 3rem;
+}
+
+.cloud-content h3 {
+  color: #5c2d6b;
+  margin-bottom: 0.75rem;
+  font-size: 2rem;
+}
+
+.cloud-content p {
+  color: #5c2d6b;
+  font-size: 1.1rem;
+  line-height: 1.5;
+}
+
+/* Contact */
+.contact-section {
+  text-align: center;
+  padding: 6rem 1rem;
+}
+
+.contact-section h2 {
+  color: #5c2d6b;
+  margin-bottom: 0.5rem;
+}
+
+.contact-section p {
+  color: #5c2d6b;
+}
+
+#home,
+#services,
+#contact {
+  scroll-margin-top: 70px;
+}
+
+/* Responsive adjustments (mobile overrides only) */
+@media (max-width: 768px) {
+  .navbar-links {
+    gap: 1.25rem;
+  }
+
+  .navbar-links a {
+    font-size: 0.9rem;
+  }
+
+  .hero-pin {
+    height: 100vh;
+  }
+
+  .hero-logo {
+    max-height: 70vh;
+  }
+
+  .cloud-pin {
+    height: 110vh;
+  }
+
+  .cloud-shape {
+    width: 480px;
+    min-height: 340px;
+  }
+
+  .cloud-content {
+    padding: 1.25rem 1.75rem;
+  }
+
+  .cloud-content h3 {
+    font-size: 1.4rem;
+  }
+
+  .cloud-content p {
+    font-size: 0.95rem;
+  }
+
+  .cloud-example-img {
+    width: auto;
+    height: auto;
+    max-width: 260px;
+    max-height: 340px;
+    object-fit: contain;
+  }
+
+
+  .cloud-example-label {
+    font-size: 0.8rem;
+  }
+}
