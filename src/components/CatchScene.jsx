@@ -2,8 +2,7 @@ import React, { useLayoutEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import CatchReveal from './CatchReveal';
-import CloudRain from './CloudRain';
-import ProjectPhonePreview from './ProjectPhonePreview';
+import CatchInteractiveReveal from './CatchInteractiveReveal';
 import './CatchScene.css';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -39,14 +38,15 @@ const CATCHES = [
     nativeHome: { x: 14.8, y: 46 }, // measured directly from the PNG's pixel data
     startsAtHome: true, // pre-placed at CLOUD_HOME on mount — no slide-in for this one
     revealPos: { x: 14.8, y: 44.5 }, // manually tuned to sit inside this cloud's shape
-    revealWidth: 7,
+    revealWidth: 10,
     sizeScale: 2,
     cameraY: '-100vh', // camera settles underwater during this catch's approach
     title: 'Web Design & Development',
     description: 'Custom responsive websites and interactive experiences for people, brands, and small businesses.',
     cta: 'View Web Work',
+    showDescription: false, // description "leaves the cloud" as part of the rain-phone reveal
     previewEnabled: true,
-    activateLabel: 'Make it rain',
+    revealType: 'rain-phone',
     screenshots: ['/catch1/WebDesignExample1.png', '/catch1/WebDesignExample2.png'],
   },
   {
@@ -59,9 +59,8 @@ const CATCHES = [
     title: 'Apps & Digital Tools',
     description: 'From simple utilities to custom platforms, we turn useful concepts into working software.',
     cta: 'Explore Software',
-    previewEnabled: true,
-    activateLabel: 'Make it rain',
-    screenshots: [],
+    previewEnabled: false, // revealType reserved, no interactive reveal implemented yet
+    revealType: 'terminal',
   },
   {
     id: 'catch3',
@@ -73,9 +72,8 @@ const CATCHES = [
     title: 'The Playground',
     description: 'Games, animation, interactive experiments, prototypes, and whatever idea keeps us awake.',
     cta: 'Enter the Playground',
-    previewEnabled: true,
-    activateLabel: 'Make it rain',
-    screenshots: [],
+    previewEnabled: false, // revealType reserved, no interactive reveal implemented yet
+    revealType: 'playground',
   },
 ];
 
@@ -261,8 +259,8 @@ const CatchScene = () => {
                   title={config.title}
                   description={config.description}
                   cta={config.cta}
+                  showDescription={config.showDescription}
                   previewEnabled={config.previewEnabled}
-                  activateLabel={config.activateLabel}
                   isActivated={activated[i]}
                   onActivate={() => handleActivate(i)}
                   style={{
@@ -310,14 +308,11 @@ const CatchScene = () => {
             ref={(el) => (previewRefs.current[i] = el)}
           >
             {activated[i] ? (
-              <>
-                <CloudRain active={activated[i]} reducedMotion={prefersReducedMotion} />
-                <ProjectPhonePreview
-                  screenshots={config.screenshots}
-                  active={activated[i]}
-                  reducedMotion={prefersReducedMotion}
-                />
-              </>
+              <CatchInteractiveReveal
+                config={config}
+                active={activated[i]}
+                reducedMotion={prefersReducedMotion}
+              />
             ) : (
               <p className="catch-preview__idle" aria-hidden="true">
                 Project preview coming soon
