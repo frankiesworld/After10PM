@@ -1,7 +1,9 @@
-import React, { useLayoutEffect, useRef } from 'react';
+import React, { useLayoutEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import CatchReveal from './CatchReveal';
+import CloudRain from './CloudRain';
+import ProjectPhonePreview from './ProjectPhonePreview';
 import './CatchScene.css';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -34,37 +36,46 @@ const CATCHES = [
   {
     id: 'catch1',
     cloudImg: '/catch1/MiniCloud2.png',
-    nativeHome: { x: 14.8, y: 44.2 }, // measured directly from the PNG's pixel data
+    nativeHome: { x: 14.8, y: 46 }, // measured directly from the PNG's pixel data
     startsAtHome: true, // pre-placed at CLOUD_HOME on mount — no slide-in for this one
     revealPos: { x: 14.8, y: 44.5 }, // manually tuned to sit inside this cloud's shape
     revealWidth: 7,
-    sizeScale: 2.5,
+    sizeScale: 2,
     cameraY: '-100vh', // camera settles underwater during this catch's approach
     title: 'Web Design & Development',
     description: 'Custom responsive websites and interactive experiences for people, brands, and small businesses.',
     cta: 'View Web Work',
+    previewEnabled: true,
+    activateLabel: 'Make it rain',
+    screenshots: ['/catch1/WebDesignExample1.png', '/catch1/WebDesignExample2.png'],
   },
   {
     id: 'catch2',
     cloudImg: '/catch1/MiniCloud2.png', // the small "left" cloud
-    nativeHome: { x: 14.8, y: 44.2 }, // measured directly from the PNG's pixel data
+    nativeHome: { x: 14.8, y: 46 }, // measured directly from the PNG's pixel data
     revealPos: { x: 14.8, y: 44.5 },
     revealWidth: 7, // 32 / sizeScale, so it lands at the same on-screen footprint as catch1's
-    sizeScale: 2.9,
+    sizeScale: 2,
     title: 'Apps & Digital Tools',
     description: 'From simple utilities to custom platforms, we turn useful concepts into working software.',
     cta: 'Explore Software',
+    previewEnabled: true,
+    activateLabel: 'Make it rain',
+    screenshots: [],
   },
   {
     id: 'catch3',
     cloudImg: '/catch1/MiniCloud.png',
-    nativeHome: { x: 81.0, y: 54.3 }, // measured directly from the PNG's pixel data
+    nativeHome: { x: 81.0, y: 56 }, // measured directly from the PNG's pixel data
     revealPos: { x: 81.0, y: 54.5 },
     revealWidth: 8,
-    sizeScale: 2.9,
+    sizeScale: 2,
     title: 'The Playground',
     description: 'Games, animation, interactive experiments, prototypes, and whatever idea keeps us awake.',
     cta: 'Enter the Playground',
+    previewEnabled: true,
+    activateLabel: 'Make it rain',
+    screenshots: [],
   },
 ];
 
@@ -83,7 +94,7 @@ const offsetTo = (point, nativeHome) => ({
 // shared points (CATCH_POINT/REEL_POINT/REVEAL_POINT/RELEASE_POINT) — only
 // which cloud/logo element is being moved changes.
 function addCatch(tl, label, config, shared) {
-  const { cloudEl, revealEl, rodEl, worldEl, linePos, applyLinePos, previewEl } = shared;
+  const { cloudEl, revealEl, rodEl, worldEl, linePos, applyLinePos, previewEl, onRelease } = shared;
   const { nativeHome, cameraY, sizeScale = 1 } = config;
 
   const to = (point) => offsetTo(point, nativeHome);
@@ -113,12 +124,13 @@ function addCatch(tl, label, config, shared) {
     .to(cloudEl, { ...to(REVEAL_POINT), scale: 1.7 * sizeScale, duration: 1 }, `${label}-reeled`)
     .to(linePos, { ...toLineTarget(REVEAL_POINT), duration: 1, onUpdate: applyLinePos }, `${label}-reeled`)
     .to(rodEl, { rotation: -6, duration: 1 }, `${label}-reeled`)
-    .to(revealEl, { opacity: 1, scale: 1, duration: 1 }, `${label}-reeled+=0.4`)
-    .to(previewEl, { opacity: 1, duration: 1 }, `${label}-reeled+=0.4`)
+    .to(revealEl, { autoAlpha: 1, scale: 1, duration: 1 }, `${label}-reeled+=0.4`)
+    .to(previewEl, { autoAlpha: 1, duration: 1 }, `${label}-reeled+=0.4`)
     .addLabel(`${label}-revealed`)
     .to(cloudEl, { ...to(RELEASE_POINT), scale: 1.4 * sizeScale, opacity: 0, duration: 1 }, `${label}-revealed`)
-    .to(revealEl, { opacity: 0, duration: 0.6 }, `${label}-revealed`)
-    .to(previewEl, { opacity: 0, duration: 0.6 }, `${label}-revealed`)
+    .to(revealEl, { autoAlpha: 0, duration: 0.6 }, `${label}-revealed`)
+    .to(previewEl, { autoAlpha: 0, duration: 0.6 }, `${label}-revealed`)
+    .call(onRelease, [], `${label}-revealed`)
     .to(linePos, { ...LINE_START, duration: 1, onUpdate: applyLinePos }, `${label}-revealed`)
     .to(rodEl, { rotation: 0, duration: 1 }, `${label}-revealed`)
     .addLabel(`${label}-released`);
@@ -133,7 +145,15 @@ const CatchScene = () => {
   const hookRef = useRef(null);
   const cloudRefs = useRef([]);
   const revealRefs = useRef([]);
-  const previewRef = useRef(null);
+  const previewRefs = useRef([]);
+
+  // Each catch owns its own activation flag — no shared "which catch is
+  // active" tracker needed, since only one CatchReveal is ever visible
+  // (autoAlpha) at a time. Reset via the timeline's onRelease call below.
+  const [activated, setActivated] = useState(() => CATCHES.map(() => false));
+  const [prefersReducedMotion] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  );
 
   useLayoutEffect(() => {
     const ctx = gsap.context(() => {
@@ -156,10 +176,14 @@ const CatchScene = () => {
       });
       revealRefs.current.forEach((el) => {
         // xPercent/yPercent: -50 centers each reveal card on its own
-        // top/left anchor and stays constant — only opacity/scale animate.
-        gsap.set(el, { opacity: 0, scale: 0.6, xPercent: -50, yPercent: -50 });
+        // top/left anchor and stays constant — only scale animates.
+        // autoAlpha (not plain opacity) also drives visibility:hidden at 0,
+        // which removes the activation button from tab order while hidden.
+        gsap.set(el, { autoAlpha: 0, scale: 0.6, xPercent: -50, yPercent: -50 });
       });
-      gsap.set(previewRef.current, { opacity: 0 });
+      previewRefs.current.forEach((el) => {
+        gsap.set(el, { autoAlpha: 0 });
+      });
 
       const linePos = { x: LINE_START.x, y: LINE_START.y };
       const applyLinePos = () => {
@@ -185,7 +209,6 @@ const CatchScene = () => {
         worldEl: worldRef.current,
         linePos,
         applyLinePos,
-        previewEl: previewRef.current,
       };
 
       CATCHES.forEach((config, i) => {
@@ -193,12 +216,21 @@ const CatchScene = () => {
           ...shared,
           cloudEl: cloudRefs.current[i],
           revealEl: revealRefs.current[i],
+          previewEl: previewRefs.current[i],
+          onRelease: () => setActivated((prev) => prev.map((v, idx) => (idx === i ? false : v))),
         });
       });
     }, wrapperRef);
 
     return () => ctx.revert();
   }, []);
+
+  // Idempotent on purpose: the activate button wires the same handler to
+  // onClick, onMouseEnter, and onFocus (click/tap is the required path;
+  // hover/focus are desktop-only enhancements, never the only way in).
+  const handleActivate = (i) => {
+    setActivated((prev) => (prev[i] ? prev : prev.map((v, idx) => (idx === i ? true : v))));
+  };
 
   return (
     <section className="catch-scene" ref={wrapperRef}>
@@ -229,6 +261,10 @@ const CatchScene = () => {
                   title={config.title}
                   description={config.description}
                   cta={config.cta}
+                  previewEnabled={config.previewEnabled}
+                  activateLabel={config.activateLabel}
+                  isActivated={activated[i]}
+                  onActivate={() => handleActivate(i)}
                   style={{
                     top: `${config.revealPos.y}%`,
                     left: `${config.revealPos.x}%`,
@@ -267,9 +303,28 @@ const CatchScene = () => {
 
         </div>
 
-        <div className="catch-preview" ref={previewRef} aria-hidden="true">
-          Project preview coming soon
-        </div>
+        {CATCHES.map((config, i) => (
+          <div
+            key={config.id}
+            className="catch-preview"
+            ref={(el) => (previewRefs.current[i] = el)}
+          >
+            {activated[i] ? (
+              <>
+                <CloudRain active={activated[i]} reducedMotion={prefersReducedMotion} />
+                <ProjectPhonePreview
+                  screenshots={config.screenshots}
+                  active={activated[i]}
+                  reducedMotion={prefersReducedMotion}
+                />
+              </>
+            ) : (
+              <p className="catch-preview__idle" aria-hidden="true">
+                Project preview coming soon
+              </p>
+            )}
+          </div>
+        ))}
       </div>
     </section>
   );

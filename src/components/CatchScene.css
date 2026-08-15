@@ -54,6 +54,11 @@
   width: 100%;
   height: 100%;
   z-index: 5;
+  /* Each cloud-group is full-viewport and all three share this z-index, so
+     whichever is last in the DOM would otherwise sit on top and silently
+     block clicks to the other two's activate buttons underneath it.
+     .catch-reveal__activate re-enables pointer-events on itself. */
+  pointer-events: none;
 }
 
 /* top/left/width come from each catch's `revealPos`/`revealWidth` config in
@@ -95,6 +100,33 @@
   cursor: default;
 }
 
+/* The one genuinely interactive control in .catch-reveal — needs its own
+   pointer-events:auto since the parent card blocks all pointer events. */
+.catch-reveal__activate {
+  pointer-events: auto;
+  margin-top: 0.2em;
+  padding: 0.35em 0.9em;
+  border: 1px solid #ec1f8f;
+  border-radius: 999px;
+  background: transparent;
+  color: #ec1f8f;
+  font-size: 0.55em;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.catch-reveal__activate:hover,
+.catch-reveal__activate:focus-visible {
+  background: #ec1f8f;
+  color: #fff;
+}
+
+.catch-reveal__activate[aria-pressed='true'] {
+  background: #ec1f8f;
+  color: #fff;
+  cursor: default;
+}
+
 /* Softens the surface/underwater seam so there's no hard line or flash
    where the two 100vh sections meet. */
 .catch-world__seam {
@@ -109,22 +141,138 @@
 }
 
 /* Decoupled from .cloud-group on purpose: same size/position for every
-   catch, regardless of which cloud is active or how it's scaled. */
+   catch, regardless of which cloud is active or how it's scaled. One
+   instance per catch (only one visible at a time via autoAlpha), so the
+   activated project preview never needs to track "which catch is active". */
 .catch-preview {
   position: absolute;
   left: 50%;
   bottom: 10%;
   transform: translateX(-50%);
-  width: min(80%, 20em);
+  width: min(95%, 38em);
+  text-align: center;
+  z-index: 6;
+}
+
+.catch-preview__idle {
+  margin: 0;
   padding: 0.8em 0;
   border: 1px dashed #c98fd9;
   border-radius: 0.6em;
   color: #e8ddc7;
   font-size: 1rem;
   font-style: italic;
-  text-align: center;
   pointer-events: none;
-  z-index: 6;
+}
+
+.cloud-rain {
+  position: relative;
+  width: min(95%, 38em);
+  height: 1.6em;
+  margin: 0 auto;
+  pointer-events: none;
+}
+
+.cloud-rain__drop {
+  position: absolute;
+  top: 0;
+  width: 0.12em;
+  height: 0.8em;
+  border-radius: 999px;
+  background: linear-gradient(to bottom, transparent, #bcd9ff);
+  opacity: 0;
+  animation: cloud-rain-fall 1.3s linear infinite;
+}
+
+@keyframes cloud-rain-fall {
+  0% {
+    transform: translateY(-0.4em);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.9;
+  }
+  85% {
+    opacity: 0.3;
+  }
+  100% {
+    transform: translateY(1.6em);
+    opacity: 0;
+  }
+}
+
+/* Layered mockup: case behind, screen content clipped in the middle,
+   border/bezel in front (confirmed against the real PNGs — PhoneBorder
+   carries the notch, which only makes sense sitting over the screen).
+   PhoneCase.png/PhoneBorder.png are wide 4000x3000 canvases with the phone
+   shape occupying only a narrow strip in the middle — not a tight crop like
+   the rest of this project's assets. Rather than distort them into a
+   portrait box, .project-phone matches their true canvas ratio (so the
+   images render undistorted) and .project-phone__screen is positioned to
+   land on wherever the phone shape actually sits inside that padding —
+   measured by eye, so treat these numbers as a first pass to tune live. */
+.project-phone {
+  position: relative;
+  margin: 0.6em auto 0;
+  width: min(95%, 38em);
+  aspect-ratio: 4 / 3;
+}
+
+.project-phone__case,
+.project-phone__border {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  user-select: none;
+}
+
+.project-phone__case {
+  z-index: 1;
+}
+
+.project-phone__border {
+  z-index: 3;
+}
+
+.project-phone__screen {
+  position: absolute;
+  inset: 13% 37% 21% 39%; /* eyeballed against the phone shape's position within the padded canvas — tune live */
+  border-radius: 12% / 5%;
+  overflow: hidden;
+  z-index: 2;
+}
+
+.project-phone__track {
+  display: flex;
+  width: 100%;
+  height: 100%;
+}
+
+.project-phone__slide {
+  flex: 0 0 100%;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.project-phone__slide--placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #3a2e55, #1c1638);
+  color: #e8ddc7;
+  font-size: 0.55em;
+  text-align: center;
+  padding: 0.5em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cloud-rain__drop {
+    animation: none;
+    opacity: 0.5;
+  }
 }
 
 .fishing-line-svg {
