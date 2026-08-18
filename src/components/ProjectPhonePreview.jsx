@@ -60,6 +60,7 @@ const ProjectPhonePreview = ({ screenshots = [], active, reducedMotion }) => {
 
   return (
     <div className="project-phone" ref={phoneRef} aria-hidden="true">
+      <div className="project-phone__backdrop" />
       <img className="project-phone__case" src="/catch1/PhoneCase.png" alt="" />
       <div className="project-phone__screen">
         <div className="project-phone__track" ref={trackRef}>

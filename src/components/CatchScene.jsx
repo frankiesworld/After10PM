@@ -43,6 +43,8 @@ const CATCHES = [
     cameraY: '-100vh', // camera settles underwater during this catch's approach
     title: 'Web Design & Development',
     description: 'Custom responsive websites and interactive experiences for people, brands, and small businesses.',
+    descriptionLead: 'Custom responsive websites and interactive experiences', // settles left of the phone
+    descriptionTrail: 'for people, brands, and small businesses.', // settles right of the phone
     cta: 'View Web Work',
     showDescription: false, // description "leaves the cloud" as part of the rain-phone reveal
     previewEnabled: true,
@@ -144,6 +146,12 @@ const CatchScene = () => {
   const cloudRefs = useRef([]);
   const revealRefs = useRef([]);
   const previewRefs = useRef([]);
+  // Portal target for reveal mechanics that need to render *behind* the
+  // cloud/preview stacking (e.g. RainPhoneReveal's submarine) — a sibling
+  // of .catch-preview rather than nested inside it, since z-index can never
+  // let a child escape below its own parent's stacking level. Shared by all
+  // catches: harmless, since only one catch is ever active at a time.
+  const behindSlotRef = useRef(null);
 
   // Each catch owns its own activation flag — no shared "which catch is
   // active" tracker needed, since only one CatchReveal is ever visible
@@ -216,6 +224,35 @@ const CatchScene = () => {
           revealEl: revealRefs.current[i],
           previewEl: previewRefs.current[i],
           onRelease: () => setActivated((prev) => prev.map((v, idx) => (idx === i ? false : v))),
+        });
+      });
+
+      // The per-catch onRelease call above only reliably fires when scroll
+      // crosses a catch's own release point moving forward. Scrubbing
+      // backward — even just back up to the surface, still inside this
+      // pinned section — doesn't consistently trigger it, leaving a stale
+      // activated interactive reveal on screen. This runs on every scroll
+      // update instead: each catch's "active window" is the span between
+      // its own reveal and release labels, already set by addCatch above,
+      // and anything activated outside its own window gets force-reset,
+      // regardless of scroll direction or how the timeline got there.
+      const activeWindows = CATCHES.map((config) => ({
+        start: tl.labels[`${config.id}-reeled`],
+        end: tl.labels[`${config.id}-revealed`],
+      }));
+
+      tl.eventCallback('onUpdate', () => {
+        const t = tl.time();
+        setActivated((prev) => {
+          let changed = false;
+          const next = prev.map((isActive, i) => {
+            if (isActive && (t < activeWindows[i].start || t > activeWindows[i].end)) {
+              changed = true;
+              return false;
+            }
+            return isActive;
+          });
+          return changed ? next : prev;
         });
       });
     }, wrapperRef);
@@ -301,6 +338,8 @@ const CatchScene = () => {
 
         </div>
 
+        <div className="catch-behind-slot" ref={behindSlotRef} />
+
         {CATCHES.map((config, i) => (
           <div
             key={config.id}
@@ -312,6 +351,7 @@ const CatchScene = () => {
                 config={config}
                 active={activated[i]}
                 reducedMotion={prefersReducedMotion}
+                behindContainer={behindSlotRef.current}
               />
             ) : (
               <p className="catch-preview__idle" aria-hidden="true">

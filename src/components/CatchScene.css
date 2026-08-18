@@ -157,6 +157,148 @@
   pointer-events: none;
 }
 
+/* SubMarineMain/Outline/Propellers/Scope are all 2000x2000 canvases with
+   the sub occupying a thin strip in the middle — same padded-canvas
+   situation as the phone, but cropped this time instead of shown at full
+   canvas size (a mostly-empty square would waste far more space than the
+   phone's padding did). The crop window below (24%-72% x, 25%-58% y of the
+   original canvas) is eyeballed and shared by all four layers so they stay
+   in registration with each other — if the sub's parts drift out of
+   alignment, adjust the crop numbers together, not per-layer. */
+/* .catch-behind-slot is a plain, unpositioned portal target rendered by
+   CatchScene as a sibling of .catch-preview and .catch-world — not nested
+   inside either. That's what lets .submarine-banner's z-index:4 actually
+   take effect below .cloud-group (z-index:5) and .catch-preview
+   (z-index:6): a nested child can never out-rank its own parent's
+   stacking level, so this has to live outside both. Being unpositioned
+   itself, .submarine-banner's position:absolute resolves against
+   .catch-scene__pin (the full 100vh pinned viewport) as its containing
+   block — that's the reference frame for `top` below, not .catch-preview. */
+.catch-behind-slot {
+  position: static;
+}
+
+/* `top` is set to cross through the phone's vertical range on purpose —
+   the sub itself still flies past/behind the phone (its opaque
+   .project-phone__backdrop occludes it there), even though the text no
+   longer travels with it the whole way. Eyeballed — tune live if the
+   crossing doesn't line up with the phone. */
+.submarine-banner {
+  position: absolute;
+  left: 50%;
+  top: 40%;
+  width: 100vw;
+  height: 4em;
+  margin-left: -50vw;
+  overflow: visible;
+  pointer-events: none;
+  z-index: 4;
+}
+
+.submarine-banner__track {
+  position: absolute;
+  left: -25%;
+  top: 0;
+  width: max-content;
+  display: flex;
+  align-items: center;
+  opacity: 0;
+}
+
+.submarine__description {
+  position: absolute;
+  top: 6em;
+  margin: 0;
+  max-width: 38vw;
+  color: #e8ddc7;
+  font-size: 2em;
+  line-height: 1.3;
+  opacity: 0;
+}
+
+/* Fixed landing points flanking the phone (roughly 43%-57% of the
+   viewport) — eyeballed against the phone's on-screen width, tune live
+   alongside .project-phone if they end up overlapping it. */
+.submarine__description--lead {
+  right: 60%;
+  text-align: right;
+}
+
+.submarine__description--trail {
+  left: 60%;
+  text-align: left;
+}
+
+/* Fixed width, not min(%, em) — .submarine-banner__track is width:max-content
+   (intrinsic sizing), and a percentage width can't resolve against a parent
+   whose own size depends on its content's size. That circularity resolves
+   the percentage to 0, which is why this was rendering at 0x0. */
+.submarine {
+  position: relative;
+  width: 28em;
+  aspect-ratio: 16 / 11;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.submarine__outline,
+.submarine__body,
+.submarine__propeller,
+.submarine__scope {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.submarine__outline img,
+.submarine__body img,
+.submarine__propeller img,
+.submarine__scope img {
+  position: absolute;
+  width: 208.3%;
+  height: 303%;
+  left: -50%;
+  top: -75.8%;
+  pointer-events: none;
+  user-select: none;
+}
+
+.submarine__outline {
+  z-index: 1;
+}
+
+.submarine__body {
+  z-index: 2;
+}
+
+/* transform-origin is each layer's measured hub/pivot within the cropped
+   frame (not the original canvas) — propeller hub ~9%,71%; scope's base
+   where it meets the conning tower ~73%,33%. Eyeballed — tune live. */
+.submarine__propeller {
+  z-index: 3;
+  transform-origin: 9% 71%;
+}
+
+.submarine__scope {
+  z-index: 4;
+  transform-origin: 73% 33%;
+}
+
+/* Optional, CSS-only — no separate light-beam asset needed. Rotates for
+   free since it's inside .submarine__scope, so it sweeps with the scope.
+   Delete this block (and the .submarine__beam div in JSX) if it doesn't
+   read well once you see it live. */
+.submarine__beam {
+  position: absolute;
+  left: 73%;
+  top: 20%;
+  width: 40%;
+  height: 40%;
+  background: conic-gradient(from -35deg at 0% 100%, rgba(255, 255, 255, 0.35), transparent 35%);
+  pointer-events: none;
+}
+
 .cloud-rain {
   position: relative;
   width: min(95%, 38em);
@@ -173,12 +315,12 @@
   border-radius: 999px;
   background: linear-gradient(to bottom, transparent, #bcd9ff);
   opacity: 0;
-  animation: cloud-rain-fall 1.3s linear infinite;
+  animation: cloud-rain-fall 1.01s linear infinite;
 }
 
 @keyframes cloud-rain-fall {
   0% {
-    transform: translateY(-0.4em);
+    transform: translateY(5em);
     opacity: 0;
   }
   20% {
@@ -188,7 +330,7 @@
     opacity: 0.3;
   }
   100% {
-    transform: translateY(1.6em);
+    transform: translateY(30em);
     opacity: 0;
   }
 }
@@ -208,6 +350,21 @@
   margin: 0.6em auto 0;
   width: min(95%, 50em);
   aspect-ratio: 4 / 3;
+}
+
+/* Opaque on purpose — PhoneCase/PhoneBorder are transparent PNGs with a lot
+   of padding around the actual phone shape, so without this, anything
+   passing behind .project-phone (e.g. the submarine banner) would bleed
+   through that padding instead of being cleanly blocked. Sized to roughly
+   the phone's visible silhouette (a bit wider than .project-phone__screen's
+   inset, to cover the case/bezel around the screen) — eyeballed, tune live
+   alongside .project-phone__screen if they drift out of sync. */
+.project-phone__backdrop {
+  position: absolute;
+  inset: 9% 34% 19% 36%;
+  background: #1c1638;
+  border-radius: 10% / 4%;
+  z-index: 0;
 }
 
 .project-phone__case,

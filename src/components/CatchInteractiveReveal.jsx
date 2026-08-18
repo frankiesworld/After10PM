@@ -13,11 +13,18 @@ const REVEAL_COMPONENTS = {
 // This is the only place that needs to know the full set of reveal types —
 // CatchScene stays generic (activation state, release cleanup, keyboard/
 // touch handling, ScrollTrigger sync) and never branches on revealType.
-const CatchInteractiveReveal = ({ config, active, reducedMotion }) => {
+const CatchInteractiveReveal = ({ config, active, reducedMotion, behindContainer }) => {
   const RevealComponent = REVEAL_COMPONENTS[config.revealType];
   if (!RevealComponent) return null;
 
-  return <RevealComponent config={config} active={active} reducedMotion={reducedMotion} />;
+  return (
+    <RevealComponent
+      config={config}
+      active={active}
+      reducedMotion={reducedMotion}
+      behindContainer={behindContainer}
+    />
+  );
 };
 
 export default CatchInteractiveReveal;
